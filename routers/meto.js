@@ -19,9 +19,15 @@ else {
 }
 today = yyyy + '-' + mm + '-' + dd + 'T' + hours + ':00';
 
-router.get("/soil", async (req, res) => {
+router.get("/soil/:lat/:longi", async (req, res) => {
 
-    https.get('https://api.open-meteo.com/v1/forecast?latitude=16.85438&longitude=74.56417&hourly=soil_temperature_0cm,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm&timezone=IST', (resp) => {
+    let longi = req.params.longi
+    let lat = req.params.lat
+
+    console.log(longi)
+    console.log(lat)
+
+    https.get(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${longi}&hourly=soil_temperature_0cm,soil_temperature_6cm,soil_temperature_18cm,soil_temperature_54cm&timezone=IST`, (resp) => {
 
         let data = '';
         resp.on('data', (chunk) => {
@@ -30,7 +36,7 @@ router.get("/soil", async (req, res) => {
         resp.on('end', () => {
             const result = JSON.parse(data);
             var index = result.hourly.time.indexOf(today)
-
+    
             const rslt = {
                 soil_temperature_0cm: result.hourly.soil_temperature_0cm[index],
                 soil_temperature_6cm: result.hourly.soil_temperature_6cm[index],
@@ -40,14 +46,17 @@ router.get("/soil", async (req, res) => {
             res.send(rslt);
         });
     }).on("error", (err) => {
-        res.status(400).send("Error")
+        console.log("Error: " + err.message);
     })
 })
 
 
-router.get("/soil/moist", async (req, res) => {
+router.get("/soil/moist/:lat/:longi", async (req, res) => {
 
-    https.get('https://api.open-meteo.com/v1/forecast?latitude=16.85438&longitude=74.56417&hourly=soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27cm,soil_moisture_27_81cm&timezone=IST', (resp) => {
+    let longi = await req.params.longi
+    let lat = await req.params.lat
+
+    https.get(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${longi}&hourly=soil_moisture_0_1cm,soil_moisture_1_3cm,soil_moisture_3_9cm,soil_moisture_9_27cm,soil_moisture_27_81cm&timezone=IST`, (resp) => {
 
         const d = new Date();
         let hour = d.getHours();
@@ -69,12 +78,9 @@ router.get("/soil/moist", async (req, res) => {
             res.send(rslt);
         });
     }).on("error", (err) => {
-        res.status(400).send("Error")
+        console.log("Error: " + err.message);
     })
 })
-
-
-
 
 
 router.post("/current", async (req, res) => {
@@ -117,8 +123,9 @@ router.post("/hourly-forecast", async (req, res) => {
     let lat = req.body.lat;
 
     let lon = req.body.lon;
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&hourly=temperature_2m,relativehumidity_2m,dewpoint_2m,cloudcover,weathercode&timezone=IST';
 
-    https.get('https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&hourly=temperature_2m,relativehumidity_2m,dewpoint_2m,cloudcover,weathercode&timezone=IST', (resp) => {
+    https.get(url, (resp) => {
         let data = '';
         resp.on('data', (chunk) => {
             data += chunk;
